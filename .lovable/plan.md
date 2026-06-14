@@ -1,52 +1,34 @@
-## Other incomplete end-to-end flows (besides Notifications & Commissions)
+# Fix "Cover upload failed: new row violates RLS"
 
-After auditing the codebase, here are the flows where infrastructure exists but the end-to-end experience is broken or never wired up.
+## Root cause
 
-### 1. Jobs — applying & managing applicants (most broken)
-- `job_applications` table exists with RLS for applicants and posters.
-- Hooks `useApplyToJob`, `useJobApplications`, `useUpdateApplicationStatus` exist in `src/hooks/useJobs.ts`.
-- `src/components/jobs/JobApplicationDialog.tsx` exists but is **never imported anywhere**.
-- `src/pages/JobDetail.tsx` only shows the poster's contact info — no "Apply" button.
-- Posters have no UI to view applicants or update status (accept/reject).
+The most recent security migration (`20260613041718_…sql`) dropped the `product-images public read` policy from `storage.objects` and never replaced it. The bucket is still flagged `public: true`, so reads through the CDN URL still work — but the upload flow in `AssetFormDialog.uploadCover` calls:
 
-Result: the entire application workflow is dead code. Jobs is currently a "post a contact email" board.
+```ts
+supabase.storage.from('product-images').upload(path, coverFile, { upsert: true })
+```
 
-### 2. Bundles — purchase flow
-- `bundles` and `bundle_purchases` tables exist with RLS, plus `bundle_items` join table.
-- `useSalesBundles` hooks and dashboard UI let creators create/list bundles in `DashboardSales`.
-- But: no public bundle detail page, no "Buy bundle" button, no checkout edge function for bundles, no webhook handler inserting into `bundle_purchases`.
+With `upsert: true`, Supabase Storage needs a `SELECT` policy on `storage.objects` for that bucket so it can look up whether the object already exists before inserting/updating. With no SELECT policy at all, that pre-check fails and storage surfaces the failure as `new row violates row-level security policy`.
 
-Result: creators can build bundles that nobody can actually buy.
+The INSERT/UPDATE/DELETE policies are correctly scoped (`auth.uid() = (storage.foldername(name))[1]`) — only the SELECT policy is missing.
 
-### 3. Direct messages / inbox
-- `conversations`, `conversation_participants`, `messages` tables exist.
-- Hooks: `useMessages`, `useConversations`, `useDeleteMessage`.
-- But: **no `/messages` or `/inbox` page** anywhere in `src/pages`, no nav entry, no message composer.
+## Fix
 
-Result: messaging backend is fully unreachable from the UI.
+One new migration that recreates a SELECT policy for the `product-images` bucket, matching the same shape as the other policies on that bucket:
 
-### 4. Marketplace refunds / disputes
-- `manual-refund-commission` edge function handles commission refunds only.
-- Marketplace purchases have no in-app refund or dispute flow — `Payments.tsx` punts to `disputes@fanrealms.com`.
-- No "request refund" button on `Library` items, no admin/creator-side refund UI.
+```sql
+DROP POLICY IF EXISTS "product-images public read" ON storage.objects;
 
-Result: every marketplace dispute is manual email work outside the app.
+-- Public bucket: anyone may read objects (matches the bucket's public=true setting
+-- and is required for storage upsert to perform its existence pre-check).
+CREATE POLICY "product-images public read" ON storage.objects
+  FOR SELECT TO public
+  USING (bucket_id = 'product-images');
+```
 
-### 5. Library → Recommendations (cosmetic)
-- `src/pages/LibraryRecommendations.tsx` just returns the first 12 marketplace products from `useMarketplaceProducts`. No personalisation, no ranking, no signal from purchases/follows.
+No frontend changes needed. After the migration, cover/banner/screenshot uploads will work again.
 
-Result: tab works but the name is misleading; it's just "latest products".
+## Verification
 
-### What's actually solid end-to-end
-For reference, these flows are wired through: marketplace browse → checkout → download, subscriptions, follows + follower counts, forum threads/replies/view counts, jams (submit + vote), devlogs (CRUD), creator Stripe Connect + earnings, auth + profile completion.
-
----
-
-### Suggested order of attack (when you switch to build mode)
-1. **Jobs application flow** — biggest user-facing gap, hooks already exist; just needs to wire `JobApplicationDialog` into `JobDetail` and add a posters' "Applicants" view.
-2. **Messages page** — backend is ready; needs `/messages` page + entry points from creator/profile pages.
-3. **Bundles purchase** — needs a new `create-bundle-checkout` edge function, a public bundle page, and webhook updates.
-4. **Marketplace refunds** — needs an edge function (analogous to `manual-refund-commission`) and minimal UI in Library + dashboard.
-5. **Real Library recommendations** — lower priority, more of a polish/algorithm task.
-
-Tell me which of these you want me to tackle (or pick a different priority) and I'll start.
+1. Reload the dashboard, open New Asset, pick a cover image, save → toast should show success, not the RLS error.
+2. The uploaded URL should resolve in the marketplace card immediately.
