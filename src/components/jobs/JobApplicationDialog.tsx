@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useApplyToJob } from '@/hooks/useJobs';
+import { toast } from 'sonner';
 
 interface JobApplicationDialogProps {
   listingId: string;
@@ -21,7 +22,7 @@ export function JobApplicationDialog({ listingId, jobTitle }: JobApplicationDial
     e.preventDefault();
     const trimmedUrl = portfolioUrl.trim();
     if (trimmedUrl && !/^https?:\/\//i.test(trimmedUrl)) {
-      alert('Portfolio URL must start with http:// or https://');
+      toast.error('Portfolio URL must start with http:// or https://');
       return;
     }
     apply.mutate(
