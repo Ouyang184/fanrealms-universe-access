@@ -4,6 +4,7 @@ import { useCommissionRequests } from '@/hooks/useCommissionRequests';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Check, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { safeHref } from '@/lib/safeHref';
 
 const STATUS_STYLES: Record<string, string> = {
   pending:     'bg-yellow-100 text-yellow-800',
@@ -117,7 +118,7 @@ function RequestCard({
               <p className="text-[11px] font-semibold text-[#aaa] uppercase tracking-wide mb-2">Reference images</p>
               <div className="flex flex-wrap gap-2">
                 {request.reference_images.map((url: string, i: number) => (
-                  <a key={i} href={url} target="_blank" rel="noopener noreferrer">
+                  <a key={i} href={safeHref(url)} target="_blank" rel="noopener noreferrer">
                     <img src={url} alt="" className="w-16 h-16 object-cover rounded-lg border border-[#eee] hover:opacity-80 transition-opacity" />
                   </a>
                 ))}

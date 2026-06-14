@@ -223,7 +223,7 @@ export default function ProjectPage() {
               {screenshots.map((url: string, i: number) => (
                 <a
                   key={i}
-                  href={url}
+                  href={safeHref(url)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="aspect-video rounded-xl overflow-hidden bg-[#f5f5f5] block hover:opacity-90 transition-opacity"
