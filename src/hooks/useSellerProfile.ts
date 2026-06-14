@@ -24,7 +24,7 @@ export function useSellerProducts(creatorId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('digital_products')
-        .select('id, creator_id, title, description, short_description, cover_image_url, trailer_url, project_id, godot_version, license, version, screenshots, status, tags, category, price, sale_price, created_at, updated_at, creators(id, username, display_name, profile_image_url)')
+        .select('id, creator_id, title, description, short_description, cover_image_url, trailer_url, project_id, engine, godot_version, license, version, screenshots, status, tags, category, price, sale_price, created_at, updated_at, creators(id, username, display_name, profile_image_url)')
         .eq('creator_id', creatorId)
         .eq('status', 'published')
         .order('created_at', { ascending: false });

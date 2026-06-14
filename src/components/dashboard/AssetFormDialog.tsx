@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Loader2, Upload, Plus, X } from 'lucide-react';
 import { ImageCropperDialog } from './ImageCropperDialog';
+import { ENGINES, ENGINE_VERSIONS, type Engine } from '@/lib/engines';
 
 const CATEGORIES = [
   'Plugins & Addons',
@@ -24,7 +25,6 @@ const CATEGORIES = [
   'Music & SFX',
   'Other',
 ];
-const GODOT_VERSIONS = ['Godot 4.3+', 'Godot 4.2', 'Godot 4.1', 'Godot 4.0', 'Godot 3.x', 'Any / Not applicable'];
 const LICENSES = ['Standard', 'Creative Commons (CC BY)', 'Creative Commons (CC BY-SA)', 'MIT', 'Public Domain'];
 
 interface Asset {
@@ -40,6 +40,7 @@ interface Asset {
   screenshots?: string[] | null;
   version?: string | null;
   license?: string | null;
+  engine?: string | null;
   godot_version?: string | null;
   status: string;
   project_id?: string | null;
@@ -68,7 +69,8 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
   const [downloadUrl, setDownloadUrl] = useState('');
   const [version, setVersion] = useState('');
   const [license, setLicense] = useState('Standard');
-  const [godotVersion, setGodotVersion] = useState('Godot 4.3+');
+  const [engine, setEngine] = useState<Engine>('Godot');
+  const [godotVersion, setGodotVersion] = useState<string>('Godot 4.3+');
   const [screenshots, setScreenshots] = useState<string[]>(['']);
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -87,7 +89,11 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
       setDownloadUrl(asset.asset_url ?? '');
       setVersion(asset.version ?? '');
       setLicense(asset.license ?? 'Standard');
-      setGodotVersion(asset.godot_version ?? 'Godot 4.3+');
+      const assetEngine: Engine = (ENGINES as readonly string[]).includes(asset.engine ?? '')
+        ? (asset.engine as Engine)
+        : 'Godot';
+      setEngine(assetEngine);
+      setGodotVersion(asset.godot_version ?? (ENGINE_VERSIONS[assetEngine][0] ?? ''));
       setScreenshots(asset.screenshots?.length ? asset.screenshots : ['']);
       setStatus(asset.status === 'published' ? 'published' : 'draft');
       setCoverPreview(asset.cover_image_url ?? null);
@@ -96,6 +102,7 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
       setTitle(''); setShortDescription(''); setDescription('');
       setPriceStr('0'); setCategory('Plugins & Addons'); setTagsStr('');
       setDownloadUrl(''); setVersion(''); setLicense('Standard');
+      setEngine('Godot');
       setGodotVersion('Godot 4.3+');
       setScreenshots(['']); setStatus('draft');
       setCoverFile(null); setCoverPreview(null);
@@ -186,7 +193,8 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
         screenshots: cleanScreenshots.length ? cleanScreenshots : undefined,
         version: version.trim() || undefined,
         license,
-        godot_version: godotVersion !== 'Any / Not applicable' ? godotVersion : undefined,
+        engine,
+        godot_version: godotVersion || undefined,
         status,
         project_id: projectId || null,
       };
@@ -301,7 +309,7 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
             </div>
           </div>
 
-          {/* Category + Godot Version */}
+          {/* Category + Engine + Engine Version */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Category</label>
@@ -311,13 +319,30 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
               </select>
             </div>
             <div>
-              <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Godot Version</label>
-              <select value={godotVersion} onChange={e => setGodotVersion(e.target.value)}
+              <label className="text-[13px] font-semibold text-[#333] block mb-1.5">Engine</label>
+              <select
+                value={engine}
+                onChange={e => {
+                  const next = e.target.value as Engine;
+                  setEngine(next);
+                  setGodotVersion(ENGINE_VERSIONS[next][0] ?? '');
+                }}
                 className="w-full px-3 py-2 text-[13px] border border-[#e5e5e5] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary">
-                {GODOT_VERSIONS.map(v => <option key={v} value={v}>{v}</option>)}
+                {ENGINES.map(e => <option key={e} value={e}>{e}</option>)}
               </select>
             </div>
           </div>
+
+          {ENGINE_VERSIONS[engine].length > 0 && (
+            <div>
+              <label className="text-[13px] font-semibold text-[#333] block mb-1.5">{engine} version</label>
+              <select value={godotVersion} onChange={e => setGodotVersion(e.target.value)}
+                className="w-full px-3 py-2 text-[13px] border border-[#e5e5e5] rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-primary">
+                <option value="">Any / Not specified</option>
+                {ENGINE_VERSIONS[engine].map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
+          )}
 
           {/* Price */}
           <div>

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Slider } from '@/components/ui/slider';
+import { ENGINES, ENGINE_VERSIONS, type Engine } from '@/lib/engines';
 
 const CATEGORIES = [
   'Plugins & Addons',
@@ -28,11 +29,13 @@ interface Props {
   maxPriceCents: number;
   sort: string;
   popularTags: string[];
-  godotVersion: string;
+  engine: string; // 'all' | Engine name
+  engineVersion: string; // 'all' | a version string
   onCategory: (c: string) => void;
   onMaxPriceCents: (cents: number) => void;
   onSort: (s: string) => void;
-  onGodotVersion: (v: string) => void;
+  onEngine: (e: string) => void;
+  onEngineVersion: (v: string) => void;
 }
 
 export function MarketplaceSidebar({
@@ -40,14 +43,21 @@ export function MarketplaceSidebar({
   maxPriceCents,
   sort,
   popularTags,
-  godotVersion,
+  engine,
+  engineVersion,
   onCategory,
   onMaxPriceCents,
   onSort,
-  onGodotVersion,
+  onEngine,
+  onEngineVersion,
 }: Props) {
   const isAny = maxPriceCents >= PRICE_MAX_CENTS;
   const dollarLabel = isAny ? 'Any price' : maxPriceCents === 0 ? 'Free only' : `Up to $${(maxPriceCents / 100).toFixed(0)}`;
+
+  const selectedEngineVersions =
+    engine !== 'all' && (ENGINES as readonly string[]).includes(engine)
+      ? ENGINE_VERSIONS[engine as Engine]
+      : [];
 
   return (
     <aside className="space-y-5 text-[13px] lg:sticky lg:top-20 lg:self-start">
@@ -121,12 +131,46 @@ export function MarketplaceSidebar({
       )}
 
       <Section title="Engine">
-        <UtilLink active={godotVersion === 'all'} onClick={() => onGodotVersion('all')}>Any / All engines</UtilLink>
-        <UtilLink active={godotVersion === 'Any / Not applicable'} onClick={() => onGodotVersion('Any / Not applicable')}>Not engine-specific</UtilLink>
-        {['Godot 4.3+', 'Godot 4.2', 'Godot 4.1', 'Godot 4.0', 'Godot 3.x'].map((v) => (
-          <UtilLink key={v} active={godotVersion === v} onClick={() => onGodotVersion(v)}>
-            {v}
-          </UtilLink>
+        <UtilLink
+          active={engine === 'all'}
+          onClick={() => {
+            onEngine('all');
+            onEngineVersion('all');
+          }}
+        >
+          All engines
+        </UtilLink>
+        {ENGINES.map((e) => (
+          <div key={e}>
+            <UtilLink
+              active={engine === e}
+              onClick={() => {
+                onEngine(e);
+                onEngineVersion('all');
+              }}
+            >
+              {e}
+            </UtilLink>
+            {engine === e && selectedEngineVersions.length > 0 && (
+              <div className="pl-3 border-l border-border ml-1 mt-0.5 mb-1 space-y-0.5">
+                <UtilLink
+                  active={engineVersion === 'all'}
+                  onClick={() => onEngineVersion('all')}
+                >
+                  Any version
+                </UtilLink>
+                {selectedEngineVersions.map((v) => (
+                  <UtilLink
+                    key={v}
+                    active={engineVersion === v}
+                    onClick={() => onEngineVersion(v)}
+                  >
+                    {v}
+                  </UtilLink>
+                ))}
+              </div>
+            )}
+          </div>
         ))}
       </Section>
 
