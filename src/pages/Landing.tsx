@@ -1,16 +1,40 @@
-import { Link } from "react-router-dom";
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/Logo";
 import { useMarketplaceProducts } from "@/hooks/useMarketplace";
 import { useJobListings } from "@/hooks/useJobs";
 import { useForumThreads } from "@/hooks/useForum";
 import { useActiveJam, getJamStatus } from "@/hooks/useJam";
 import { formatDistanceToNow } from "date-fns";
-import { ShoppingBag, Gamepad2, Briefcase, MessageSquare } from "lucide-react";
+import { ShoppingBag, Gamepad2, Briefcase, MessageSquare, Search } from "lucide-react";
 import { ThreadAuthorAvatar } from "@/components/forum/ThreadAuthorAvatar";
 import { PageSeo } from "@/components/PageSeo";
 
+// A few published games for the homepage showcase
+function useLandingGames() {
+  return useQuery({
+    queryKey: ['landing-games'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('projects')
+        .select('id, title, slug, short_description, cover_image_url, creators(username, display_name)')
+        .eq('status', 'published')
+        .eq('classification', 'game')
+        .order('created_at', { ascending: false })
+        .limit(4);
+      if (error) throw error;
+      return (data ?? []) as any[];
+    },
+  });
+}
+
 export default function LandingPage() {
+  const navigate = useNavigate();
+  const [searchInput, setSearchInput] = useState('');
   const { data: products } = useMarketplaceProducts("all");
+  const { data: games = [] } = useLandingGames();
   const { data: jobs } = useJobListings("all") as { data: any[] | undefined };
   const { data: threads } = useForumThreads("all") as { data: any[] | undefined };
   const { data: activeJam } = useActiveJam();
@@ -82,12 +106,36 @@ export default function LandingPage() {
             <p className="mt-4 text-[15px] text-[#777] leading-relaxed max-w-md">
               Buy and sell game assets, find freelance work, and connect with other indie developers — built with Godot creators in mind, open to everyone.
             </p>
-            <div className="flex gap-3 mt-6">
+            <form
+              onSubmit={e => {
+                e.preventDefault();
+                const q = searchInput.trim();
+                navigate(q.length >= 2 ? `/search?q=${encodeURIComponent(q)}` : '/marketplace');
+              }}
+              className="relative mt-6 max-w-md"
+            >
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#999] pointer-events-none" />
+              <input
+                type="search"
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
+                placeholder="Search assets, games, creators…"
+                aria-label="Search assets, games, and creators"
+                className="w-full h-12 pl-11 pr-28 text-[14px] border border-[#e5e5e5] rounded-[12px] bg-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+              <button
+                type="submit"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 px-4 h-9 text-[13px] font-semibold text-white bg-primary rounded-[9px] hover:bg-[#3a7aab] transition-colors"
+              >
+                Search
+              </button>
+            </form>
+            <div className="flex gap-3 mt-3">
               <Link to="/marketplace" className="px-5 py-2.5 text-[14px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#3a7aab] transition-colors">
                 Browse assets
               </Link>
-              <Link to="/signup" className="px-5 py-2.5 text-[14px] font-semibold text-[#333] bg-[#f5f5f5] rounded-[10px] hover:bg-[#eee] transition-colors">
-                Sell your work
+              <Link to="/games" className="px-5 py-2.5 text-[14px] font-semibold text-[#333] bg-[#f5f5f5] rounded-[10px] hover:bg-[#eee] transition-colors">
+                Browse games
               </Link>
             </div>
             <p className="mt-4 text-[12px] text-[#666]">Free to join · Payments secured by Stripe · No hidden fees</p>
@@ -213,6 +261,41 @@ export default function LandingPage() {
             <Link to="/signup" className="inline-flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold text-white bg-primary rounded-[10px] hover:bg-[#3a7aab] transition-colors">
               Start selling →
             </Link>
+          </div>
+        </section>
+      )}
+
+      {/* GAMES SHOWCASE */}
+      {games.length > 0 && (
+        <section className="px-4 sm:px-6 pb-10">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[15px] font-bold tracking-[-0.3px] flex items-center gap-1.5">
+              <Gamepad2 className="w-4 h-4 text-primary" /> Games on FanRealms
+            </h2>
+            <Link to="/games" className="text-[13px] font-semibold text-primary hover:underline">See all</Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {games.map((g: any) => (
+              <Link
+                key={g.id}
+                to={`/projects/${g.slug}`}
+                className="bg-white border border-[#eee] rounded-xl overflow-hidden hover:shadow-[0_6px_20px_rgba(0,0,0,0.08)] hover:-translate-y-0.5 transition-all duration-200"
+              >
+                <div className="aspect-[4/3] bg-[#f5f5f5] overflow-hidden flex items-center justify-center">
+                  {g.cover_image_url ? (
+                    <img src={g.cover_image_url} alt={g.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <Gamepad2 className="w-6 h-6 text-[#ccc]" />
+                  )}
+                </div>
+                <div className="p-3">
+                  <div className="text-[13px] font-semibold leading-snug truncate">{g.title}</div>
+                  <div className="text-[11px] text-[#666] mt-0.5 truncate">
+                    {g.creators?.display_name || g.creators?.username}
+                  </div>
+                </div>
+              </Link>
+            ))}
           </div>
         </section>
       )}
