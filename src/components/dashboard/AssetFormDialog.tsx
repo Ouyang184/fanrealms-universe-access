@@ -40,6 +40,7 @@ interface Asset {
   screenshots?: string[] | null;
   version?: string | null;
   license?: string | null;
+  engine?: string | null;
   godot_version?: string | null;
   status: string;
   project_id?: string | null;
@@ -68,7 +69,8 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
   const [downloadUrl, setDownloadUrl] = useState('');
   const [version, setVersion] = useState('');
   const [license, setLicense] = useState('Standard');
-  const [godotVersion, setGodotVersion] = useState('Godot 4.3+');
+  const [engine, setEngine] = useState<Engine>('Godot');
+  const [godotVersion, setGodotVersion] = useState<string>('Godot 4.3+');
   const [screenshots, setScreenshots] = useState<string[]>(['']);
   const [status, setStatus] = useState<'draft' | 'published'>('draft');
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -87,7 +89,11 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
       setDownloadUrl(asset.asset_url ?? '');
       setVersion(asset.version ?? '');
       setLicense(asset.license ?? 'Standard');
-      setGodotVersion(asset.godot_version ?? 'Godot 4.3+');
+      const assetEngine: Engine = (ENGINES as readonly string[]).includes(asset.engine ?? '')
+        ? (asset.engine as Engine)
+        : 'Godot';
+      setEngine(assetEngine);
+      setGodotVersion(asset.godot_version ?? (ENGINE_VERSIONS[assetEngine][0] ?? ''));
       setScreenshots(asset.screenshots?.length ? asset.screenshots : ['']);
       setStatus(asset.status === 'published' ? 'published' : 'draft');
       setCoverPreview(asset.cover_image_url ?? null);
@@ -96,6 +102,7 @@ export function AssetFormDialog({ open, onClose, asset, defaultProjectId = null 
       setTitle(''); setShortDescription(''); setDescription('');
       setPriceStr('0'); setCategory('Plugins & Addons'); setTagsStr('');
       setDownloadUrl(''); setVersion(''); setLicense('Standard');
+      setEngine('Godot');
       setGodotVersion('Godot 4.3+');
       setScreenshots(['']); setStatus('draft');
       setCoverFile(null); setCoverPreview(null);
