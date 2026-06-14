@@ -28,14 +28,22 @@ export function FeaturedSpotlight({ product }: { product: FeaturedProduct }) {
       <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr]">
         <Link
           to={`/marketplace/${product.id}`}
-          className="aspect-[16/9] bg-muted overflow-hidden block max-h-[320px] w-full"
+          className="relative aspect-[16/9] bg-muted overflow-hidden block max-h-[320px] w-full"
         >
           {product.cover_image_url ? (
-            <img
-              src={product.cover_image_url}
-              alt={product.title}
-              className="w-full h-full object-cover"
-            />
+            <>
+              <img
+                src={product.cover_image_url}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 w-full h-full object-cover scale-110 blur-xl opacity-50"
+              />
+              <img
+                src={product.cover_image_url}
+                alt={product.title}
+                className="relative w-full h-full object-contain"
+              />
+            </>
           ) : (
             <div className="w-full h-full flex items-center justify-center text-xs uppercase tracking-wide text-muted-foreground">
               No preview
