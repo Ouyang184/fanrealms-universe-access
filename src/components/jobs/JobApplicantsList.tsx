@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ExternalLink } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { safeHref } from '@/lib/safeHref';
 
 interface JobApplicantsListProps {
   listingId: string;
