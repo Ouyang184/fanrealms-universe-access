@@ -891,6 +891,7 @@ export type Database = {
           created_at: string
           creator_id: string
           description: string | null
+          engine: string | null
           godot_version: string | null
           id: string
           license: string | null
@@ -918,6 +919,7 @@ export type Database = {
           created_at?: string
           creator_id: string
           description?: string | null
+          engine?: string | null
           godot_version?: string | null
           id?: string
           license?: string | null
@@ -945,6 +947,7 @@ export type Database = {
           created_at?: string
           creator_id?: string
           description?: string | null
+          engine?: string | null
           godot_version?: string | null
           id?: string
           license?: string | null
