@@ -30,12 +30,13 @@ import { ArrowLeft, Upload, X, Loader2, ExternalLink, Trash2, ChevronDown, Chevr
 import { ReleaseVersionPanel } from '@/components/marketplace/ReleaseVersionPanel';
 import { useCreatorProjects } from '@/hooks/useProjects';
 import { ImageCropperDialog } from '@/components/dashboard/ImageCropperDialog';
+import { ENGINES, ENGINE_VERSIONS, type Engine } from '@/lib/engines';
 
 const CATEGORIES = [
   'Plugins & Addons', 'Shaders', 'Scripts & Systems', '2D Assets', '3D Assets',
   'Complete Games', 'Templates', 'Tools', 'Tutorials', 'Music & SFX', 'Other',
 ];
-const GODOT_VERSIONS = ['Any / Not applicable', 'Godot 4.3+', 'Godot 4.2', 'Godot 4.1', 'Godot 4.0', 'Godot 3.x'];
+
 const LICENSES = ['Standard', 'Creative Commons (CC BY)', 'Creative Commons (CC BY-SA)', 'MIT', 'Public Domain'];
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_COVER_SIZE_MB = 5;
@@ -76,7 +77,8 @@ export default function DashboardAssetDetail() {
   const [priceStr, setPriceStr] = useState('');
   const [salePriceStr, setSalePriceStr] = useState('');
   const [category, setCategory] = useState('Plugins & Addons');
-  const [godotVersion, setGodotVersion] = useState('Any / Not applicable');
+  const [engine, setEngine] = useState<Engine>('Godot');
+  const [godotVersion, setGodotVersion] = useState<string>('');
   const [tagsStr, setTagsStr] = useState('');
   const [downloadUrl, setDownloadUrl] = useState('');
   const [trailerUrl, setTrailerUrl] = useState('');
@@ -125,7 +127,11 @@ export default function DashboardAssetDetail() {
         setPriceStr('');
       }
       setCategory(p.category ?? 'Plugins & Addons');
-      setGodotVersion(p.godot_version ?? 'Godot 4.3+');
+      const assetEngine: Engine = (ENGINES as readonly string[]).includes(p.engine ?? '')
+        ? (p.engine as Engine)
+        : 'Godot';
+      setEngine(assetEngine);
+      setGodotVersion(p.godot_version ?? '');
       setTagsStr((p.tags ?? []).join(', '));
       setDownloadUrl(p.asset_url ?? '');
       setAssetFilePath(p.asset_file_path ?? null);
@@ -285,7 +291,8 @@ export default function DashboardAssetDetail() {
       price: priceDollars,
       pricing_model: priceMode,
       category,
-      godot_version: godotVersion !== 'Any / Not applicable' ? godotVersion : undefined,
+      engine,
+      godot_version: godotVersion || undefined,
       tags: tagsStr.split(',').map(t => t.trim()).filter(Boolean),
       project_id: projectId ?? undefined,
       sale_price: (priceMode === 'paid' && salePriceStr && parseFloat(salePriceStr) > 0 && parseFloat(salePriceStr) < parseFloat(priceStr || '0'))
