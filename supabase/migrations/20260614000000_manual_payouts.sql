@@ -97,3 +97,10 @@ begin
 end;
 $$;
 grant execute on function public.admin_mark_payouts_paid(uuid) to authenticated;
+
+-- Functions default to EXECUTE for PUBLIC (incl. anon); revoke so only
+-- authenticated callers reach them. The internal auth.uid()/is_admin checks
+-- already block anon, this is defense in depth.
+revoke execute on function public.get_my_payout_info() from anon, public;
+revoke execute on function public.admin_list_pending_payouts() from anon, public;
+revoke execute on function public.admin_mark_payouts_paid(uuid) from anon, public;
