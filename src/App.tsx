@@ -222,7 +222,7 @@ export default function App() {
                 <Route path="/library/reviews" element={<AuthGuard><LibraryReviewsPage /></AuthGuard>} />
 
 
-                <Route path="/home" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/home" element={<Navigate to="/marketplace" replace />} />
 
                 {/* Settings */}
                 <Route path="/settings" element={<AuthGuard><MainLayout><AccountSettings /></MainLayout></AuthGuard>} />
