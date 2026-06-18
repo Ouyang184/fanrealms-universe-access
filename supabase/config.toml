@@ -2,3 +2,6 @@ project_id = "eaeqyctjljbtcatlohky"
 
 [functions.oauth-intent-validate]
 verify_jwt = false
+
+[functions.godot-marketplace]
+verify_jwt = false
