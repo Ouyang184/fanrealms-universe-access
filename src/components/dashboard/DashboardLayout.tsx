@@ -20,7 +20,8 @@ interface Item {
 const EXPLORE: Item[] = [
   { to: '/marketplace', label: 'Marketplace' },
   { to: '/library', label: 'My library' },
-  { to: '/subscriptions', label: 'My subscriptions' },
+  // 'My subscriptions' hidden until the subscription system is finalized.
+  // The /subscriptions route still exists; this only removes the nav link.
 ];
 
 const CREATE: Item[] = [
