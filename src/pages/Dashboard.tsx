@@ -30,7 +30,11 @@ export default function DashboardPage() {
   // was added (itch.io model: everyone is a creator by default).
   useEffect(() => {
     if (!user?.id) return;
-    void (supabase.rpc('ensure_creator_row' as any) as unknown as Promise<unknown>).catch(() => {/* silent — row already exists */});
+    // The PostgREST builder is thenable but has no `.catch`, so use the
+    // two-arg `.then` to swallow errors (row already exists / RPC unavailable).
+    void supabase
+      .rpc('ensure_creator_row' as any)
+      .then(() => {}, () => {});
   }, [user?.id]);
 
   // Handle redirect back from Stripe Connect onboarding
