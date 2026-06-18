@@ -1,6 +1,7 @@
 import { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate, useParams } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
+import { Toaster as ShadcnToaster } from "@/components/ui/toaster";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import LoadingPage from "./pages/Loading";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -253,6 +254,10 @@ export default function App() {
               </RouteErrorBoundary>
               </AuthGate>
               <Toaster />
+              {/* shadcn toaster: 80+ files report success/errors via useToast
+                  (@/hooks/use-toast). Without this mount those toasts were
+                  invisible, so failed actions looked like "nothing happened". */}
+              <ShadcnToaster />
             </RootLayout>
           </TooltipProvider>
         </AuthProvider>
