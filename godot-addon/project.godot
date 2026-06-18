@@ -1,0 +1,8 @@
+config_version=5
+
+[application]
+config/name="FanRealms Addon Dev"
+config/features=PackedStringArray("4.6")
+
+[editor_plugins]
+enabled=PackedStringArray("res://addons/fanrealms/plugin.cfg")

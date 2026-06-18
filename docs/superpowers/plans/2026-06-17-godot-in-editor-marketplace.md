@@ -59,7 +59,7 @@ config/name="FanRealms Addon Dev"
 config/features=PackedStringArray("4.6")
 
 [editor_plugins]
-enabled=PackedStringArray("res://addons/fanrealms/plugin.gd")
+enabled=PackedStringArray("res://addons/fanrealms/plugin.cfg")
 ```
 
 - [ ] **Step 2: Create the addon manifest**
