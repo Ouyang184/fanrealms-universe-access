@@ -764,6 +764,8 @@ export type Database = {
           follower_count: number
           id: string
           is_nsfw: boolean
+          payout_details: string | null
+          payout_method: string | null
           platform_fee_rate: number
           profile_image_url: string | null
           tags: string[] | null
@@ -787,6 +789,8 @@ export type Database = {
           follower_count?: number
           id?: string
           is_nsfw?: boolean
+          payout_details?: string | null
+          payout_method?: string | null
           platform_fee_rate?: number
           profile_image_url?: string | null
           tags?: string[] | null
@@ -810,6 +814,8 @@ export type Database = {
           follower_count?: number
           id?: string
           is_nsfw?: boolean
+          payout_details?: string | null
+          payout_method?: string | null
           platform_fee_rate?: number
           profile_image_url?: string | null
           tags?: string[] | null
@@ -3124,6 +3130,23 @@ export type Database = {
       }
     }
     Functions: {
+      admin_list_pending_payouts: {
+        Args: never
+        Returns: {
+          creator_id: string
+          display_name: string
+          oldest_pending: string
+          payout_details: string
+          payout_method: string
+          pending_count: number
+          pending_total: number
+          username: string
+        }[]
+      }
+      admin_mark_payouts_paid: {
+        Args: { p_creator_id: string }
+        Returns: number
+      }
       audit_payment_operation: {
         Args: {
           p_metadata?: Json
@@ -3565,6 +3588,13 @@ export type Database = {
       get_my_job_listing_contact: {
         Args: { _listing_id: string }
         Returns: string
+      }
+      get_my_payout_info: {
+        Args: never
+        Returns: {
+          payout_details: string
+          payout_method: string
+        }[]
       }
       get_payment_method_for_processing: {
         Args: { p_operation: string; p_payment_method_id: string }
