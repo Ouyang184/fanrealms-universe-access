@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { CREATOR_SAFE_COLUMNS } from "@/lib/creatorColumns";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCreatorProfile } from "@/hooks/useCreatorProfile";
 import { CreatorProfile, Post } from "@/types";
@@ -39,7 +40,7 @@ export function useCreatorProfileData() {
       // Get the latest creator data including all commission fields
       const { data: latestCreatorData, error: creatorError } = await supabase
         .from('creators')
-        .select('*')
+        .select(CREATOR_SAFE_COLUMNS)
         .eq('user_id', user.id)
         .maybeSingle();
       

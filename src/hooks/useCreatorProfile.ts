@@ -2,6 +2,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase";
+import { CREATOR_SAFE_COLUMNS } from "@/lib/creatorColumns";
 
 export function useCreatorProfile() {
   const { user } = useAuth();
@@ -13,7 +14,7 @@ export function useCreatorProfile() {
       
       const { data, error } = await supabase
         .from('creators')
-        .select('*')
+        .select(CREATOR_SAFE_COLUMNS)
         .eq('user_id', user.id)
         .single();
         

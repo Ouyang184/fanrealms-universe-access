@@ -1,6 +1,7 @@
 
 import { useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { CREATOR_SAFE_COLUMNS } from '@/lib/creatorColumns';
 import { useToast } from '@/hooks/use-toast';
 
 export interface ProfileData {
@@ -33,7 +34,7 @@ export const useProfile = () => {
       // Then get the creator data if it exists
       const { data: creatorData, error: creatorError } = await supabase
         .from('creators')
-        .select('*')
+        .select(CREATOR_SAFE_COLUMNS)
         .eq('user_id', userId)
         .maybeSingle();
 

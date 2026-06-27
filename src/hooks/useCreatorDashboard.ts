@@ -1,6 +1,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { CREATOR_SAFE_COLUMNS } from "@/lib/creatorColumns";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
 import type { Post, DbCreator } from "@/types";
@@ -19,7 +20,7 @@ export function useCreatorDashboard() {
       
       const { data, error } = await supabase
         .from('creators')
-        .select('*')
+        .select(CREATOR_SAFE_COLUMNS)
         .eq('user_id', user.id)
         .maybeSingle();
         
