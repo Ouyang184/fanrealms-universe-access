@@ -667,11 +667,22 @@ export default function DashboardAssetDetail() {
                         }
                       </div>
                       {assetFilePath && !assetFile && (
-                        <div className="flex items-center gap-2 mt-0.5">
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                           <span className="text-[11px] text-[#aaa]">Uploaded to secure storage</span>
                           <ScanStatusBadge status={(product as any)?.scan_status} />
+                          {(product as any)?.scan_status !== 'clean' && (
+                            <button
+                              type="button"
+                              disabled={scanning}
+                              onClick={handleRunScan}
+                              className="text-[11px] text-primary hover:underline font-medium disabled:opacity-50"
+                            >
+                              {scanning ? 'Scanning…' : 'Run virus scan'}
+                            </button>
+                          )}
                         </div>
                       )}
+
                       {assetFile && (
                         <div className="text-[11px] text-[#aaa]">Will upload on save</div>
                       )}
