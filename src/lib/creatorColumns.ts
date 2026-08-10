@@ -10,8 +10,8 @@
 // Use this constant instead of '*' anywhere we read creator profile rows.
 // It is exactly the set of columns the roles are allowed to read, so it
 // returns what a working `select('*')` would have, and never leaks payout data.
+// NOTE: must stay a single string literal with `as const` so supabase-js can
+// infer the row type. A concatenated string widens to `string`, which makes
+// every selected field resolve to `GenericStringError`.
 export const CREATOR_SAFE_COLUMNS =
-  'id, user_id, username, display_name, creator_name, bio, tags, website, ' +
-  'banner_url, profile_image_url, user_profile_picture, follower_count, is_nsfw, ' +
-  'accepts_commissions, commission_base_rate, commission_turnaround_days, ' +
-  'commission_slots_available, commission_tos, created_at, updated_at';
+  'id, user_id, username, display_name, creator_name, bio, tags, website, banner_url, profile_image_url, user_profile_picture, follower_count, is_nsfw, accepts_commissions, commission_base_rate, commission_turnaround_days, commission_slots_available, commission_tos, created_at, updated_at' as const;
