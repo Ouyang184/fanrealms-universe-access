@@ -12,6 +12,7 @@ import { triggerScan } from '@/lib/scan';
 import { ScanStatusBadge } from '@/components/dashboard/ScanStatusBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RichDescriptionEditor } from '@/components/editor/RichDescriptionEditor';
@@ -313,6 +314,7 @@ export default function DashboardAssetDetail() {
     };
   };
 
+  const queryClient = useQueryClient();
   const [scanning, setScanning] = useState(false);
   const handleRunScan = async () => {
     if (!assetId || isNew) return;
