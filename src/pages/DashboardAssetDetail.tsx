@@ -322,6 +322,11 @@ export default function DashboardAssetDetail() {
       toast.error('A download file or URL is required to publish');
       return null;
     }
+    if (finalStatus === 'published' && (product as any)?.scan_status === 'infected' && !assetFile) {
+      toast.error('This file was flagged by our virus scanner. Upload a clean file before publishing.');
+      return null;
+    }
+
     const payload = buildPayload(overrideStatus);
     if (!payload) return null;
 
