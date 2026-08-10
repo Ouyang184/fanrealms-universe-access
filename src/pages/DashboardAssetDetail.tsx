@@ -383,10 +383,6 @@ export default function DashboardAssetDetail() {
           setAssetFile(null);
         }
 
-        if (assetFile === null && finalFilePath !== assetFilePath) {
-          // no-op: keeps the intent explicit for future readers
-        }
-
         await updateProduct.mutateAsync({
           id: assetId!,
           ...payload,

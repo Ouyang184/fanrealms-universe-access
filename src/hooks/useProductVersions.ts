@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { triggerScan } from '@/lib/scan';
 import { toast } from 'sonner';
 
 export interface ProductVersion {
@@ -79,6 +80,10 @@ export function usePublishProductVersion() {
         })
         .eq('id', productId);
       if (updateErr) throw new Error('Failed to update product: ' + updateErr.message);
+
+      // Scan the newly uploaded file; downloads stay blocked until it comes back clean.
+      void triggerScan('product_versions', (inserted as any).id);
+      void triggerScan('digital_products', productId);
 
       return { ...(inserted as ProductVersion), file_path: path };
     },
