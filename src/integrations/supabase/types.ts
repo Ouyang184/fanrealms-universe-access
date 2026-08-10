@@ -905,6 +905,10 @@ export type Database = {
           pricing_model: string | null
           project_id: string | null
           sale_price: number | null
+          scan_hash: string | null
+          scan_status: string
+          scan_verdict: Json | null
+          scanned_at: string | null
           screenshots: string[] | null
           short_description: string | null
           status: string
@@ -933,6 +937,10 @@ export type Database = {
           pricing_model?: string | null
           project_id?: string | null
           sale_price?: number | null
+          scan_hash?: string | null
+          scan_status?: string
+          scan_verdict?: Json | null
+          scanned_at?: string | null
           screenshots?: string[] | null
           short_description?: string | null
           status?: string
@@ -961,6 +969,10 @@ export type Database = {
           pricing_model?: string | null
           project_id?: string | null
           sale_price?: number | null
+          scan_hash?: string | null
+          scan_status?: string
+          scan_verdict?: Json | null
+          scanned_at?: string | null
           screenshots?: string[] | null
           short_description?: string | null
           status?: string
@@ -2288,6 +2300,10 @@ export type Database = {
           id: string
           product_id: string
           release_notes: string | null
+          scan_hash: string | null
+          scan_status: string
+          scan_verdict: Json | null
+          scanned_at: string | null
           version_number: string
         }
         Insert: {
@@ -2296,6 +2312,10 @@ export type Database = {
           id?: string
           product_id: string
           release_notes?: string | null
+          scan_hash?: string | null
+          scan_status?: string
+          scan_verdict?: Json | null
+          scanned_at?: string | null
           version_number: string
         }
         Update: {
@@ -2304,6 +2324,10 @@ export type Database = {
           id?: string
           product_id?: string
           release_notes?: string | null
+          scan_hash?: string | null
+          scan_status?: string
+          scan_verdict?: Json | null
+          scanned_at?: string | null
           version_number?: string
         }
         Relationships: [
