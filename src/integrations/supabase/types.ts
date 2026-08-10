@@ -3409,6 +3409,7 @@ export type Database = {
           created_at: string
           creator_id: string
           description: string
+          engine: string
           godot_version: string
           id: string
           license: string
@@ -3416,6 +3417,9 @@ export type Database = {
           pricing_model: string
           project_id: string
           sale_price: number
+          scan_status: string
+          scan_verdict: Json
+          scanned_at: string
           screenshots: string[]
           short_description: string
           status: string
