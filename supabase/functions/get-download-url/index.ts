@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     // Fetch product (service role so we always get the row regardless of RLS)
     const { data: product, error: productError } = await serviceClient
       .from('digital_products')
-      .select('id, price, asset_file_path, asset_url, status')
+      .select('id, price, asset_file_path, asset_url, status, scan_status')
       .eq('id', product_id)
       .maybeSingle()
 
@@ -79,6 +79,17 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'No download available for this product' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Quarantine gate: never hand out a link to a file that isn't cleared
+    if (product.asset_file_path && product.scan_status !== 'clean') {
+      const message = product.scan_status === 'infected'
+        ? 'This file was flagged by our malware scanner and has been removed from download.'
+        : 'This file is still being reviewed by our malware scanner. Please try again shortly.'
+      return new Response(
+        JSON.stringify({ error: message, scan_status: product.scan_status }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
