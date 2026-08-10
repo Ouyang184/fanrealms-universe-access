@@ -8,6 +8,8 @@ import {
   useDeleteProduct,
   useSellerSales,
 } from '@/hooks/useMarketplace';
+import { triggerScan } from '@/lib/scan';
+import { ScanStatusBadge } from '@/components/dashboard/ScanStatusBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -320,6 +322,11 @@ export default function DashboardAssetDetail() {
       toast.error('A download file or URL is required to publish');
       return null;
     }
+    if (finalStatus === 'published' && (product as any)?.scan_status === 'infected' && !assetFile) {
+      toast.error('This file was flagged by our virus scanner. Upload a clean file before publishing.');
+      return null;
+    }
+
     const payload = buildPayload(overrideStatus);
     if (!payload) return null;
 
@@ -365,15 +372,18 @@ export default function DashboardAssetDetail() {
           });
           setAssetFilePath(filePath);
           setAssetFile(null);
+          void triggerScan('digital_products', newId);
         }
         return newId;
       } else {
         // For existing assets: upload file first, then save everything together
         let finalFilePath = assetFilePath;
+        let uploadedNewFile = false;
         if (assetFile) {
           const filePath = await uploadAssetFile(assetId!);
           if (!filePath) return null;
           finalFilePath = filePath;
+          uploadedNewFile = true;
           setAssetFilePath(filePath);
           setAssetFile(null);
         }
@@ -387,6 +397,7 @@ export default function DashboardAssetDetail() {
           asset_file_path: finalFilePath,
           asset_url: finalFilePath ? undefined : (downloadUrl.trim() || undefined),
         });
+        if (uploadedNewFile) void triggerScan('digital_products', assetId!);
         return assetId!;
       }
     } catch (err: any) {
@@ -656,7 +667,10 @@ export default function DashboardAssetDetail() {
                         }
                       </div>
                       {assetFilePath && !assetFile && (
-                        <div className="text-[11px] text-[#aaa]">Uploaded to secure storage</div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <span className="text-[11px] text-[#aaa]">Uploaded to secure storage</span>
+                          <ScanStatusBadge status={(product as any)?.scan_status} />
+                        </div>
                       )}
                       {assetFile && (
                         <div className="text-[11px] text-[#aaa]">Will upload on save</div>

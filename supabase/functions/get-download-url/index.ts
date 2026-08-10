@@ -89,7 +89,8 @@ Deno.serve(async (req) => {
         : 'This file is still being reviewed by our malware scanner. Please try again shortly.'
       return new Response(
         JSON.stringify({ error: message, scan_status: product.scan_status }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        // 200 so the browser client can read the explanation; no URL is issued.
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
