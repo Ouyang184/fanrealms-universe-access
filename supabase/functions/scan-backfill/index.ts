@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders })
 
   try {
-    // Admin-only: caller must be an authenticated user with the admin role.
+    // Authenticated callers only. Admins scan every pending file; creators scan their own.
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) return json({ error: 'Unauthorized' }, 401)
     const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader
@@ -31,23 +31,39 @@ Deno.serve(async (req) => {
     if (authError || !user) return json({ error: 'Unauthorized' }, 401)
 
     const supabase = serviceClient()
-    const { data: isAdmin } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' })
-    if (!isAdmin) return json({ error: 'Forbidden' }, 403)
+
+    // Admins scan everything pending. Creators may scan only their own files.
+    const { data: hasAdminRole } = await supabase.rpc('has_role', { _user_id: user.id, _role: 'admin' })
+    const { data: userRow } = await supabase
+      .from('users').select('is_admin').eq('id', user.id).maybeSingle()
+    const isAdmin = !!hasAdminRole || !!userRow?.is_admin
+
+    let creatorId: string | null = null
+    if (!isAdmin) {
+      const { data: creator } = await supabase
+        .from('creators').select('id').eq('user_id', user.id).maybeSingle()
+      if (!creator) return json({ error: 'Forbidden' }, 403)
+      creatorId = creator.id
+    }
 
     const results: Array<{ table: ScanTable; id: string; status: string }> = []
 
-    const { data: products } = await supabase
+    let productQuery = supabase
       .from('digital_products')
       .select('id, asset_file_path')
       .eq('scan_status', 'pending')
       .not('asset_file_path', 'is', null)
       .limit(MAX_PER_RUN)
+    if (creatorId) productQuery = productQuery.eq('creator_id', creatorId)
+    const { data: products } = await productQuery
 
-    const { data: versions } = await supabase
+    let versionQuery = supabase
       .from('product_versions')
-      .select('id, file_path')
+      .select('id, file_path, digital_products!inner(creator_id)')
       .eq('scan_status', 'pending')
       .limit(MAX_PER_RUN)
+    if (creatorId) versionQuery = versionQuery.eq('digital_products.creator_id', creatorId)
+    const { data: versions } = await versionQuery
 
     const queue: Array<{ table: ScanTable; id: string; path: string }> = [
       ...(products ?? []).map((p) => ({ table: 'digital_products' as const, id: p.id, path: p.asset_file_path! })),
