@@ -313,6 +313,26 @@ export default function DashboardAssetDetail() {
     };
   };
 
+  const [scanning, setScanning] = useState(false);
+  const handleRunScan = async () => {
+    if (!assetId || isNew) return;
+    setScanning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('scan-asset-file', {
+        body: { table: 'digital_products', id: assetId },
+      });
+      if (error) throw error;
+      if (data?.status === 'infected') toast.error('This file was flagged as malicious.');
+      else if (data?.status === 'clean') toast.success('Virus scan passed.');
+      else toast.message('Scan finished — awaiting review.');
+      queryClient.invalidateQueries({ queryKey: ['creator-product', assetId] });
+    } catch {
+      toast.error('Could not run the virus scan. Please try again.');
+    } finally {
+      setScanning(false);
+    }
+  };
+
   // Returns the saved asset ID on success, null on failure.
   const doSave = async (overrideStatus?: 'draft' | 'published'): Promise<string | null> => {
     if (!title.trim()) { toast.error('Title is required'); return null; }
