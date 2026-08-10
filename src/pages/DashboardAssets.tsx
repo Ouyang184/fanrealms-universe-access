@@ -4,7 +4,11 @@ import { useCreatorProducts, useDeleteProduct } from '@/hooks/useMarketplace';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Trash2, Package } from 'lucide-react';
+import { Plus, Trash2, Package, ShieldCheck } from 'lucide-react';
+import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +29,29 @@ export default function DashboardAssetsPage() {
   const { data: assets, isLoading } = useCreatorProducts();
   const deleteProduct = useDeleteProduct();
 
+  const queryClient = useQueryClient();
+  const [scanningAll, setScanningAll] = useState(false);
+
+  // Scans every one of this creator's files that hasn't been cleared yet.
+  const handleScanAll = async () => {
+    setScanningAll(true);
+    toast.message('Scanning your files…', { description: 'This can take a minute or two.' });
+    try {
+      const { data, error } = await supabase.functions.invoke('scan-backfill', { body: {} });
+      if (error) throw error;
+      const scanned = data?.scanned ?? 0;
+      const infected = (data?.results ?? []).filter((r: any) => r.status === 'infected').length;
+      if (scanned === 0) toast.success('All your files are already scanned.');
+      else if (infected > 0) toast.error(`${scanned} file(s) scanned — ${infected} flagged as malicious.`);
+      else toast.success(`${scanned} file(s) scanned successfully.`);
+      queryClient.invalidateQueries({ queryKey: ['creator-products'] });
+    } catch {
+      toast.error('Scan failed. Please try again in a moment.');
+    } finally {
+      setScanningAll(false);
+    }
+  };
+
   const handleNew = () => {
     const url = projectParam
       ? `/dashboard/assets/new?project=${encodeURIComponent(projectParam)}`
@@ -40,6 +67,16 @@ export default function DashboardAssetsPage() {
             <h1 className="text-[20px] font-bold tracking-[-0.5px]">Your Assets</h1>
             <p className="text-[13px] text-[#888] mt-0.5">Manage your Godot asset listings</p>
           </div>
+          <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={handleScanAll}
+            disabled={scanningAll}
+            className="text-[13px] font-semibold"
+          >
+            <ShieldCheck className="w-4 h-4 mr-2" />
+            {scanningAll ? 'Scanning…' : 'Scan all files'}
+          </Button>
           <Button
             onClick={handleNew}
             className="bg-primary hover:bg-[#3a7aab] text-white text-[13px] font-semibold"
@@ -47,6 +84,7 @@ export default function DashboardAssetsPage() {
             <Plus className="w-4 h-4 mr-2" />
             New asset
           </Button>
+          </div>
         </div>
 
         {isLoading ? (
