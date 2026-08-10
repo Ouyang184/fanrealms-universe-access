@@ -12,6 +12,7 @@ import { triggerScan } from '@/lib/scan';
 import { ScanStatusBadge } from '@/components/dashboard/ScanStatusBadge';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { RichDescriptionEditor } from '@/components/editor/RichDescriptionEditor';
@@ -311,6 +312,27 @@ export default function DashboardAssetDetail() {
       license,
       status: finalStatus,
     };
+  };
+
+  const queryClient = useQueryClient();
+  const [scanning, setScanning] = useState(false);
+  const handleRunScan = async () => {
+    if (!assetId || isNew) return;
+    setScanning(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('scan-asset-file', {
+        body: { table: 'digital_products', id: assetId },
+      });
+      if (error) throw error;
+      if (data?.status === 'infected') toast.error('This file was flagged as malicious.');
+      else if (data?.status === 'clean') toast.success('Virus scan passed.');
+      else toast.message('Scan finished — awaiting review.');
+      queryClient.invalidateQueries({ queryKey: ['creator-product', assetId] });
+    } catch {
+      toast.error('Could not run the virus scan. Please try again.');
+    } finally {
+      setScanning(false);
+    }
   };
 
   // Returns the saved asset ID on success, null on failure.
@@ -667,11 +689,22 @@ export default function DashboardAssetDetail() {
                         }
                       </div>
                       {assetFilePath && !assetFile && (
-                        <div className="flex items-center gap-2 mt-0.5">
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                           <span className="text-[11px] text-[#aaa]">Uploaded to secure storage</span>
                           <ScanStatusBadge status={(product as any)?.scan_status} />
+                          {(product as any)?.scan_status !== 'clean' && (
+                            <button
+                              type="button"
+                              disabled={scanning}
+                              onClick={handleRunScan}
+                              className="text-[11px] text-primary hover:underline font-medium disabled:opacity-50"
+                            >
+                              {scanning ? 'Scanning…' : 'Run virus scan'}
+                            </button>
+                          )}
                         </div>
                       )}
+
                       {assetFile && (
                         <div className="text-[11px] text-[#aaa]">Will upload on save</div>
                       )}
